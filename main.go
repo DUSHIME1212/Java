@@ -1,10 +1,12 @@
 package main
 
 import (
+	"math/rand"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -24,10 +26,60 @@ type Director struct {
 var movies []Movie
 
 
-func getmovies(w http.ResponseWriter, r http.Request){
+func getmovies(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("content-type","application/json")
 	json.NewEncoder(w).Encode(movies)
 
+}
+func deletemovie(w http.ResponseWriter, r *http.Request){
+	w.Header().Set("content-type","application/json")
+	params := mux.Vars(r)
+	for index, item := range movies {
+		if item.Id == params["id"] {
+			movies = append(movies[:index],movies[index+1:]...)
+			break
+		}
+	}
+	json.NewEncoder(w).Encode(movies)
+}
+func getmovie(w http.ResponseWriter, r *http.Request){
+	w.Header().Set("content-type","application/json")
+	params := mux.Vars(r)
+	for _, item := range movies {
+		if item.Id == params["id"] {
+			json.NewEncoder(w).Encode(item)
+			return
+		}
+	}
+}
+
+func createMovie(w http.ResponseWriter, r *http.Request){
+	w.Header().Set("content-type","application/json")
+	var movie Movie
+	_ = json.NewDecoder(r.Body).Decode(&movie)
+	movie.Id = strconv.Itoa(rand.Intn(100))
+	movies = append(movies, movie)
+	json.NewEncoder(w).Encode(movie)
+
+} 
+func updatemovie(w http.ResponseWriter, r *http.Request){
+	w.Header().Set("content-type","application/json")
+
+	params := mux.Vars(r)
+
+	var updatedMovie Movie
+	_ = json.NewDecoder(r.Body).Decode(&updatedMovie)
+
+	for index, item := range movies {
+		if item.Id == params["id"] {
+			if updatedMovie.Id == "" {
+				updatedMovie.Id = strconv.Itoa(rand.Intn(100))
+			}
+			movies[index] = updatedMovie
+			json.NewEncoder(w).Encode(updatedMovie)
+			return
+		}
+	}
 }
 
 func main() {
